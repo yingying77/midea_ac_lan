@@ -29,7 +29,6 @@ from homeassistant.const import (
     CONF_CUSTOMIZE,
 )
 from .midea.devices import device_selector
-from functools import partial
 _LOGGER = logging.getLogger(__name__)
 
 

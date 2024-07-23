@@ -1,5 +1,7 @@
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.const import Platform, CONF_DEVICE_ID, CONF_SENSORS
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from .const import (
     DOMAIN,
     DEVICES
@@ -8,7 +10,7 @@ from .midea_entity import MideaEntity
 from .midea_devices import MIDEA_DEVICES
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass:HomeAssistant, config_entry:ConfigEntry, async_add_entities):
     device_id = config_entry.data.get(CONF_DEVICE_ID)
     device = hass.data[DOMAIN][DEVICES].get(device_id)
     extra_sensors = config_entry.options.get(

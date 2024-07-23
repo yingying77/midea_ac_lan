@@ -1,5 +1,24 @@
-from homeassistant.components.climate import *
-from homeassistant.components.climate.const import *
+from homeassistant.components.climate import (
+    ClimateEntity,
+    ClimateEntityFeature,
+    HVACMode,
+    PRESET_COMFORT,
+    PRESET_ECO,
+    PRESET_BOOST,
+    PRESET_SLEEP,
+    PRESET_AWAY,
+    PRESET_NONE,
+    FAN_LOW,
+    FAN_MEDIUM,
+    FAN_HIGH,
+    FAN_AUTO,
+    SWING_OFF,
+    SWING_VERTICAL,
+    SWING_HORIZONTAL,
+    SWING_BOTH,
+    ATTR_HVAC_MODE,
+    
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -31,7 +50,7 @@ FAN_SILENT = "Silent"
 FAN_FULL_SPEED = "Full"
 
 
-async def async_setup_entry(hass:HomeAssistant, config_entry, async_add_entities):
+async def async_setup_entry(hass:HomeAssistant, config_entry:ConfigEntry, async_add_entities):
     device_id = config_entry.data.get(CONF_DEVICE_ID)
     device = hass.data[DOMAIN][DEVICES].get(device_id)
     extra_switches = config_entry.options.get(

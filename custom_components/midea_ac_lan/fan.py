@@ -1,4 +1,8 @@
-from homeassistant.components.fan import *
+from homeassistant.components.fan import (
+    FanEntity,
+    FanEntityFeature,
+)
+from typing import Any
 from homeassistant.const import (
     Platform,
     CONF_DEVICE_ID,
@@ -27,16 +31,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     devs = []
     for entity_key, config in MIDEA_DEVICES[device.device_type]["entities"].items():
         if config["type"] == Platform.FAN and (config.get("default") or entity_key in extra_switches):
-            if device.device_type == 0xFA:
-                devs.append(MideaFAFan(device, entity_key))
-            elif device.device_type == 0xB6:
-                devs.append(MideaB6Fan(device, entity_key))
-            elif device.device_type == 0xAC:
+            if device.device_type == 0xAC:
                 devs.append(MideaACFreshAirFan(device, entity_key))
-            elif device.device_type == 0xCE:
-                devs.append(MideaCEFan(device, entity_key))
-            elif device.device_type == 0x40:
-                devs.append(Midea40Fan(device, entity_key))
     async_add_entities(devs)
 
 
@@ -113,7 +109,7 @@ class MideaFan(MideaEntity, FanEntity):
 class MideaACFreshAirFan(MideaFan):
     def __init__(self, device, entity_key):
         super().__init__(device, entity_key)
-        self._attr_supported_features = SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
+        self._attr_supported_features = FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE
         self._attr_speed_count = 100
 
     @property
