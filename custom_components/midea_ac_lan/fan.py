@@ -11,8 +11,6 @@ from .const import (
     DEVICES,
 )
 from .midea.devices.ac.device import DeviceAttributes as ACAttributes
-from .midea.devices.ce.device import DeviceAttributes as CEAttributes
-from .midea.devices.x40.device import DeviceAttributes as X40Attributes
 from .midea_devices import MIDEA_DEVICES
 from .midea_entity import MideaEntity
 
@@ -112,20 +110,6 @@ class MideaFan(MideaEntity, FanEntity):
             _LOGGER.debug(f"Entity {self.entity_id} update_state {repr(e)}, status = {status}")
 
 
-class MideaFAFan(MideaFan):
-    def __init__(self, device, entity_key):
-        super().__init__(device, entity_key)
-        self._attr_supported_features = SUPPORT_SET_SPEED | SUPPORT_OSCILLATE | SUPPORT_PRESET_MODE
-        self._attr_speed_count = self._device.speed_count
-
-
-class MideaB6Fan(MideaFan):
-    def __init__(self, device, entity_key):
-        super().__init__(device, entity_key)
-        self._attr_supported_features = SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
-        self._attr_speed_count = self._device.speed_count
-
-
 class MideaACFreshAirFan(MideaFan):
     def __init__(self, device, entity_key):
         super().__init__(device, entity_key)
@@ -169,32 +153,3 @@ class MideaACFreshAirFan(MideaFan):
     def preset_mode(self):
         return self._device.get_attribute(attr=ACAttributes.fresh_air_mode)
 
-
-class MideaCEFan(MideaFan):
-    def __init__(self, device, entity_key):
-        super().__init__(device, entity_key)
-        self._attr_supported_features = SUPPORT_SET_SPEED | SUPPORT_PRESET_MODE
-        self._attr_speed_count = self._device.speed_count
-
-    def turn_on(self, percentage, preset_mode, **kwargs):
-        self._device.set_attribute(attr=CEAttributes.power, value=True)
-
-    async def async_set_percentage(self, percentage: int):
-        await self.hass.async_add_executor_job(self.set_percentage, percentage)
-
-
-class Midea40Fan(MideaFan):
-    def __init__(self, device, entity_key):
-        super().__init__(device, entity_key)
-        self._attr_supported_features = SUPPORT_SET_SPEED | SUPPORT_OSCILLATE
-        self._attr_speed_count = 2
-
-    @property
-    def state(self):
-        return STATE_ON if self._device.get_attribute(attr=X40Attributes.fan_speed) > 0 else STATE_OFF
-
-    def turn_on(self, percentage, preset_mode, **kwargs):
-        self._device.set_attribute(attr=X40Attributes.fan_speed, value=1)
-
-    def turn_off(self):
-        self._device.set_attribute(attr=X40Attributes.fan_speed, value=0)

@@ -17,6 +17,7 @@ from .const import (
 from .midea_devices import MIDEA_DEVICES
 
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_NAME,
     CONF_TOKEN,
@@ -28,26 +29,18 @@ from homeassistant.const import (
     CONF_CUSTOMIZE,
 )
 from .midea.devices import device_selector
-
+from functools import partial
 _LOGGER = logging.getLogger(__name__)
 
 
-async def update_listener(hass, config_entry):
+async def update_listener(hass:HomeAssistant, config_entry:ConfigEntry):
     for platform in ALL_PLATFORM:
         await hass.config_entries.async_forward_entry_unload(config_entry, platform)
-    for platform in ALL_PLATFORM:
-        hass.async_create_task(hass.config_entries.async_forward_entry_setup(
-            config_entry, platform))
+    await hass.config_entries.async_forward_entry_setups(config_entry, ALL_PLATFORM)
     device_id = config_entry.data.get(CONF_DEVICE_ID)
-    customize = config_entry.options.get(
-        CONF_CUSTOMIZE, ""
-    )
-    ip_address = config_entry.options.get(
-        CONF_IP_ADDRESS, None
-    )
-    refresh_interval = config_entry.options.get(
-        CONF_REFRESH_INTERVAL, None
-    )
+    customize = config_entry.options.get(CONF_CUSTOMIZE, "")
+    ip_address = config_entry.options.get(CONF_IP_ADDRESS, None)
+    refresh_interval = config_entry.options.get(CONF_REFRESH_INTERVAL, None)
     dev = hass.data[DOMAIN][DEVICES].get(device_id)
     if dev:
         dev.set_customize(customize)
@@ -56,7 +49,7 @@ async def update_listener(hass, config_entry):
         if refresh_interval is not None:
             dev.set_refresh_interval(refresh_interval)
 
-
+#注册服务
 async def async_setup(hass: HomeAssistant, hass_config: dict):
     hass.data.setdefault(DOMAIN, {})
     attributes = []
@@ -121,7 +114,7 @@ async def async_setup(hass: HomeAssistant, hass_config: dict):
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry):
+async def async_setup_entry(hass: HomeAssistant, config_entry:ConfigEntry):
     device_type = config_entry.data.get(CONF_TYPE)
     if device_type == CONF_ACCOUNT:
         return True
@@ -145,19 +138,20 @@ async def async_setup_entry(hass: HomeAssistant, config_entry):
     if protocol == 3 and (key is None or key is None):
         _LOGGER.error("For V3 devices, the key and the token is required.")
         return False
-    device = device_selector(
-        name=name,
-        device_id=device_id,
-        device_type=device_type,
-        ip_address=ip_address,
-        port=port,
-        token=token,
-        key=key,
-        protocol=protocol,
-        model=model,
-        subtype=subtype,
-        customize=customize,
-    )
+    device = await hass.async_add_executor_job(
+            device_selector,
+            name,
+            device_id,
+            device_type,
+            ip_address,
+            port,
+            token,
+            key,
+            protocol,
+            model,
+            subtype,
+            customize
+        ) 
     if refresh_interval is not None:
         device.set_refresh_interval(refresh_interval)
     if device:
@@ -167,15 +161,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry):
         if DEVICES not in hass.data[DOMAIN]:
             hass.data[DOMAIN][DEVICES] = {}
         hass.data[DOMAIN][DEVICES][device_id] = device
-        for platform in ALL_PLATFORM:
-            hass.async_create_task(hass.config_entries.async_forward_entry_setup(
-                config_entry, platform))
+        await hass.config_entries.async_forward_entry_setups(config_entry, ALL_PLATFORM)
         config_entry.add_update_listener(update_listener)
         return True
     return False
 
 
-async def async_unload_entry(hass: HomeAssistant, config_entry):
+async def async_unload_entry(hass: HomeAssistant, config_entry:ConfigEntry):
     device_type = config_entry.data.get(CONF_TYPE)
     if device_type == CONF_ACCOUNT:
         return True
